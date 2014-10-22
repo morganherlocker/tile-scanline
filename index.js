@@ -19,7 +19,7 @@ module.exports = function(geom, limits) {
 }
 
 function polyRing(ring, max_zoom) {
-    var tiles = {};
+    var tileHash = {};
     //ignores holes
     var min = [null,Infinity];
     var max = [null,-Infinity];
@@ -34,19 +34,50 @@ function polyRing(ring, max_zoom) {
     var maxTile = tilebelt.pointToTile(max[0], max[1], max_zoom);
     var y = maxTile[1];
     while(y <= minTile[1]) {
+        // calculate intersections at each tile top-line
         var intersections = [];
         var bbox = tilebelt.tileToBBOX([0, y, max_zoom]);
         var line = [[bbox[0], bbox[3]], 
                     [bbox[1], bbox[3]]];
         for(var i = 0; i < ring.length - 1; i++) {
-            intersections.push(lineIntersects(line[0][0], line[0][1], line[1][0], line[1][1], 
-                ring[i][0], ring[i][1], ring[i+1][0], ring[i+1][1]));
+            var intersection = lineIntersects(line[0][0], line[0][1], line[1][0], line[1][1], 
+                ring[i][0], ring[i][1], ring[i+1][0], ring[i+1][1]);
+            if(intersection[0]) {
+                //console.log(intersection)
+                intersections.push(intersection);
+            }
         }
-        for(var i = 0; i < ring.length - 1; i++) {
-            
+        // sort intersections by x
+        intersections = intersections.sort(function(a, b) {
+            return a[0] - b[0];
+        });
+        console.log(intersections)
+        // add tiles between intersection pairs
+        for(var i = 0; i < intersections.length - 1; i++) {
+            if(i % 2 === 0){
+                var enter = tilebelt.pointToTile(intersections[i][0], intersections[i][1], max_zoom);
+                var exit = tilebelt.pointToTile(intersections[i+1][0], intersections[i+1][1], max_zoom);
+                //console.log(intersections[i])
+                //console.log(JSON.stringify(tilebelt.tileToGeoJSON(enter)))
+                console.log(enter)
+                var x = enter[0]
+                while (x <= exit[0]) {
+                    tileHash[x+'/'+y+'/'+max_zoom] = true;
+                    x++;
+                }
+            }
         }
         y++;
     }
+    tiles = Object.keys(tileHash)
+    var fc = []
+    tiles.forEach(function(tile){
+        tile = tile.split('/').map(function(t){return parseInt(t)})
+        fc.push(tilebelt.tileToGeoJSON(tile))
+        console.log(tile)
+        
+    })
+    console.log(JSON.stringify(fc))
 }
 
 // modified from http://jsfiddle.net/justin_c_rounds/Gd2S2/light/
