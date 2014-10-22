@@ -51,7 +51,7 @@ function polyRing(ring, max_zoom) {
         intersections = intersections.sort(function(a, b) {
             return a[0] - b[0];
         });
-        console.log(intersections)
+        //console.log(intersections)
         // add tiles between intersection pairs
         for(var i = 0; i < intersections.length - 1; i++) {
             if(i % 2 === 0){
@@ -59,7 +59,6 @@ function polyRing(ring, max_zoom) {
                 var exit = tilebelt.pointToTile(intersections[i+1][0], intersections[i+1][1], max_zoom);
                 //console.log(intersections[i])
                 //console.log(JSON.stringify(tilebelt.tileToGeoJSON(enter)))
-                console.log(enter)
                 var x = enter[0]
                 while (x <= exit[0]) {
                     tileHash[x+'/'+y+'/'+max_zoom] = true;
@@ -69,15 +68,14 @@ function polyRing(ring, max_zoom) {
         }
         y++;
     }
-    tiles = Object.keys(tileHash)
-    var fc = []
+    return Object.keys(tileHash)
+    /*var fc = []
     tiles.forEach(function(tile){
         tile = tile.split('/').map(function(t){return parseInt(t)})
         fc.push(tilebelt.tileToGeoJSON(tile))
-        console.log(tile)
         
     })
-    console.log(JSON.stringify(fc))
+    console.log(JSON.stringify(fc))*/
 }
 
 // modified from http://jsfiddle.net/justin_c_rounds/Gd2S2/light/
