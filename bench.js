@@ -8,7 +8,7 @@ suite.add('scan building - z6', function() {
     scanline(poly, {min_zoom: 6, max_zoom: 6})
 }).add('scan building - z12', function() {
     scanline(poly, {min_zoom: 12, max_zoom: 12})
-}).add('scan building - z28', function() {
+}).add('scan building - z18', function() {
     scanline(poly, {min_zoom: 18, max_zoom: 18})
 }).add('scan building - z20', function() {
     scanline(poly, {min_zoom: 20, max_zoom: 20})

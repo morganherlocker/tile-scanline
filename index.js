@@ -12,22 +12,28 @@ module.exports = function(geom, limits) {
     } else if(geom.type === 'MultiLineString') {
         throw new Error('Not Implemented');
     } else if(geom.type === 'Polygon') {
-        polyRing(geom.coordinates[0], limits.max_zoom);
+        return polyRing(geom.coordinates, limits.max_zoom);
     } else if(geom.type === 'MultPolygon') {
         throw new Error('Not Implemented');
     } 
 }
 
 function polyRing(ring, max_zoom) {
+    // construct segments
+    var segments = [];
+    for(var i = 0; i < ring.length; i++) { 
+        for(var k = 0; k < ring[i].length - 1; k++) { 
+            segments.push([[ring[i][k][0], ring[i][k][1]], [ring[i][k+1][0], ring[i][k+1][1]]])
+        }
+    }
     var tileHash = {};
-    //ignores holes
     var min = [null,Infinity];
     var max = [null,-Infinity];
-    for(var i = 0; i < ring.length; i++) { 
-        if(ring[i][1] < min[1]) {
-            min = ring[i];
-        } else if (ring[i][1] > max[1]) {
-            max = ring[i];
+    for(var i = 0; i < ring[0].length; i++) { 
+        if(ring[0][i][1] < min[1]) {
+            min = ring[0][i];
+        } else if (ring[0][i][1] > max[1]) {
+            max = ring[0][i];
         }
     }
     var minTile = tilebelt.pointToTile(min[0], min[1], max_zoom);
@@ -39,11 +45,11 @@ function polyRing(ring, max_zoom) {
         var bbox = tilebelt.tileToBBOX([0, y, max_zoom]);
         var line = [[bbox[0], bbox[3]], 
                     [bbox[1], bbox[3]]];
-        for(var i = 0; i < ring.length - 1; i++) {
+        for(var i = 0; i < segments.length; i++) {
+            //console.log(segments[i])
             var intersection = lineIntersects(line[0][0], line[0][1], line[1][0], line[1][1], 
-                ring[i][0], ring[i][1], ring[i+1][0], ring[i+1][1]);
+                segments[i][0][0], segments[i][0][1], segments[i][1][0], segments[i][1][1]);
             if(intersection[0]) {
-                //console.log(intersection)
                 intersections.push(intersection);
             }
         }
@@ -51,14 +57,11 @@ function polyRing(ring, max_zoom) {
         intersections = intersections.sort(function(a, b) {
             return a[0] - b[0];
         });
-        //console.log(intersections)
         // add tiles between intersection pairs
         for(var i = 0; i < intersections.length - 1; i++) {
             if(i % 2 === 0){
                 var enter = tilebelt.pointToTile(intersections[i][0], intersections[i][1], max_zoom);
                 var exit = tilebelt.pointToTile(intersections[i+1][0], intersections[i+1][1], max_zoom);
-                //console.log(intersections[i])
-                //console.log(JSON.stringify(tilebelt.tileToGeoJSON(enter)))
                 var x = enter[0]
                 while (x <= exit[0]) {
                     tileHash[x+'/'+y+'/'+max_zoom] = true;
@@ -68,14 +71,17 @@ function polyRing(ring, max_zoom) {
         }
         y++;
     }
-    return Object.keys(tileHash)
-    /*var fc = []
+/*
+    var tiles = Object.keys(tileHash)
+    //console.log(tiles)
+    var fc = []
     tiles.forEach(function(tile){
         tile = tile.split('/').map(function(t){return parseInt(t)})
         fc.push(tilebelt.tileToGeoJSON(tile))
-        
     })
-    console.log(JSON.stringify(fc))*/
+    console.log(JSON.stringify(fc))
+*/
+    return Object.keys(tileHash)
 }
 
 // modified from http://jsfiddle.net/justin_c_rounds/Gd2S2/light/
@@ -91,8 +97,8 @@ function lineIntersects(line1StartX, line1StartY, line1EndX, line1EndY, line2Sta
 
     denominator = ((line2EndY - line2StartY) * (line1EndX - line1StartX)) - ((line2EndX - line2StartX) * (line1EndY - line1StartY));
     if (denominator == 0) {
-        if(result.x != null && result.y != null) {
-            return result;
+        if(res[0] != null && res[1] != null) {
+            return res;
         } else {
             return false;
         }
