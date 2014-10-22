@@ -1,0 +1,25 @@
+{
+  "name": "tile-scanline",
+  "version": "1.0.0",
+  "description": "tile-scanline =============",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/morganherlocker/tile-scanline.git"
+  },
+  "author": "morganherlocker",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/morganherlocker/tile-scanline/issues"
+  },
+  "homepage": "https://github.com/morganherlocker/tile-scanline",
+  "dependencies": {
+    "tilebelt": "^0.5.3"
+  },
+  "devDependencies": {
+    "tape": "^3.0.1"
+  }
+}
