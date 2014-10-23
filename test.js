@@ -20,7 +20,7 @@ test('hole', function(t) {
 });
 
 test('line', function(t) {
-    var limits = {min_zoom: 10, max_zoom: 10};
+    var limits = {min_zoom: 15, max_zoom: 15};
     var tiles = scanline(line, limits);
     t.ok(tiles);
     t.end();

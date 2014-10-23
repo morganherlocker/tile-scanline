@@ -8,17 +8,17 @@ module.exports = function(geom, limits) {
     } else if(geom.type === 'MultiPoint') {
         throw new Error('Not Implemented');
     } else if(geom.type === 'LineString') {
-        throw new Error('Not Implemented');
+        return lineCover(geom.coordinates, limits.max_zoom);
     } else if(geom.type === 'MultiLineString') {
         throw new Error('Not Implemented');
     } else if(geom.type === 'Polygon') {
-        return polyRing(geom.coordinates, limits.max_zoom);
+        return polyRingCover(geom.coordinates, limits.max_zoom);
     } else if(geom.type === 'MultPolygon') {
         throw new Error('Not Implemented');
     } 
 }
 
-function polyRing(ring, max_zoom) {
+function polyRingCover(ring, max_zoom) {
     // construct segments
     var segments = [];
     for(var i = 0; i < ring.length; i++) { 
@@ -81,7 +81,7 @@ function polyRing(ring, max_zoom) {
     })
     console.log(JSON.stringify(fc))
 */
-    return Object.keys(tileHash)
+    return Object.keys(tileHash);
 }
 
 // modified from http://jsfiddle.net/justin_c_rounds/Gd2S2/light/
@@ -124,19 +124,32 @@ function lineIntersects(line1StartX, line1StartY, line1EndX, line1EndY, line2Sta
     }
 }
 
-function line(x0, y0, x1, y1){
-   var dx = Math.abs(x1-x0);
-   var dy = Math.abs(y1-y0);
-   var sx = (x0 < x1) ? 1 : -1;
-   var sy = (y0 < y1) ? 1 : -1;
-   var err = dx-dy;
+function lineCover(segments, max_zoom){
+    var tileHash = {};
+    for (var i = 0; i < segments.length; i ++) {
+        var x0, y0, x1, y1;
+        var dx = Math.abs(x1-x0);
+        var dy = Math.abs(y1-y0);
+        var sx = (x0 < x1) ? 1 : -1;
+        var sy = (y0 < y1) ? 1 : -1;
+        var err = dx-dy;
 
-   while(true){
-     setPixel(x0,y0);  // Do what you need to for this
+        while(true){
+            tileHash[x0+'/'+y0+'/'+max_zoom] = true;
 
-     if ((x0==x1) && (y0==y1)) break;
-     var e2 = 2*err;
-     if (e2 >-dy){ err -= dy; x0  += sx; }
-     if (e2 < dx){ err += dx; y0  += sy; }
-   }
+            if ((x0==x1) && (y0==y1)) break;
+            var e2 = 2*err;
+            if (e2 >-dy){ err -= dy; x0  += sx; }
+            if (e2 < dx){ err += dx; y0  += sy; }
+        }
+    }
+    var tiles = Object.keys(tileHash)
+    //console.log(tiles)
+    var fc = []
+    tiles.forEach(function(tile){
+        tile = tile.split('/').map(function(t){return parseInt(t)})
+        fc.push(tilebelt.tileToGeoJSON(tile))
+    })
+    console.log(JSON.stringify(fc))
+    return Object.keys(tileHash);
 }
