@@ -2,7 +2,7 @@ tile-scanline
 ===
 [![Build Status](https://travis-ci.org/morganherlocker/tile-scanline.svg)](https://travis-ci.org/morganherlocker/tile-scanline)
 
-tile-scanline is an algorithm for rasterizing vector geometry as [map tiles](http://msdn.microsoft.com/en-us/library/bb259689.aspx). It uses a combination of a modified [scanline polygon fill](http://en.wikipedia.org/wiki/Scanline_rendering) and a modified [Bresenham's line drawing algorithm](http://en.wikipedia.org/wiki/Bresenham's_line_algorithm). 
+tile-scanline is an algorithm for rasterizing vector geometry as [map tiles](http://msdn.microsoft.com/en-us/library/bb259689.aspx). It uses a combination of a modified [scanline polygon fill](http://en.wikipedia.org/wiki/Scanline_rendering) and a modified [Bresenham's line drawing algorithm](http://en.wikipedia.org/wiki/Bresenham's_line_algorithm). It is highly optimized, and is able to index 100s of thousands of polygons and lines at high resolution on a single process.
 
 ##Install
 ```sh
