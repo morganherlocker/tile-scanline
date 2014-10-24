@@ -15,7 +15,7 @@ module.exports = function(geom, limits) {
         return polyRingCover(geom.coordinates, limits.max_zoom);
     } else if(geom.type === 'MultPolygon') {
         throw new Error('Not Implemented');
-    } 
+    }
 }
 
 function polyRingCover(ring, max_zoom) {
@@ -23,7 +23,7 @@ function polyRingCover(ring, max_zoom) {
     var segments = [];
     for(var i = 0; i < ring.length; i++) { 
         for(var k = 0; k < ring[i].length - 1; k++) { 
-            segments.push([[ring[i][k][0], ring[i][k][1]], [ring[i][k+1][0], ring[i][k+1][1]]])
+            segments.push([[ring[i][k][0], ring[i][k][1]], [ring[i][k+1][0], ring[i][k+1][1]]]);
         }
     }
     var tileHash = {};
@@ -62,7 +62,7 @@ function polyRingCover(ring, max_zoom) {
             if(i % 2 === 0){
                 var enter = tilebelt.pointToTile(intersections[i][0], intersections[i][1], max_zoom);
                 var exit = tilebelt.pointToTile(intersections[i+1][0], intersections[i+1][1], max_zoom);
-                var x = enter[0]
+                var x = enter[0];
                 while (x <= exit[0]) {
                     tileHash[x+'/'+y+'/'+max_zoom] = true;
                     x++;
@@ -71,16 +71,6 @@ function polyRingCover(ring, max_zoom) {
         }
         y++;
     }
-/*
-    var tiles = Object.keys(tileHash)
-    //console.log(tiles)
-    var fc = []
-    tiles.forEach(function(tile){
-        tile = tile.split('/').map(function(t){return parseInt(t)})
-        fc.push(tilebelt.tileToGeoJSON(tile))
-    })
-    console.log(JSON.stringify(fc))
-*/
     return Object.keys(tileHash);
 }
 
@@ -93,11 +83,11 @@ function lineIntersects(line1StartX, line1StartY, line1EndX, line1EndY, line2Sta
         numerator2,
         onLine1= false,
         onLine2= false,
-        res = [null, null]
+        res = [null, null];
 
     denominator = ((line2EndY - line2StartY) * (line1EndX - line1StartX)) - ((line2EndX - line2StartX) * (line1EndY - line1StartY));
-    if (denominator == 0) {
-        if(res[0] != null && res[1] != null) {
+    if (denominator === 0) {
+        if(res[0] !== null && res[1] !== null) {
             return res;
         } else {
             return false;
@@ -124,32 +114,68 @@ function lineIntersects(line1StartX, line1StartY, line1EndX, line1EndY, line2Sta
     }
 }
 
-function lineCover(segments, max_zoom){
+function lineCover(coordinates, max_zoom) {
+    // break into segments
+    var segments = [];
+    for(var i = 0; i < coordinates.length - 1; i++) { 
+        segments.push([[coordinates[i][0], coordinates[i][1]], [coordinates[i+1][0], coordinates[i+1][1]]]);
+    }
     var tileHash = {};
     for (var i = 0; i < segments.length; i ++) {
-        var x0, y0, x1, y1;
+        // encode coordinates as tile relative pairs
+        segments[i][0] = pointToTileFraction(segments[i][0][0], segments[i][0][1], max_zoom);
+        segments[i][1] = pointToTileFraction(segments[i][1][0], segments[i][1][1], max_zoom);       
+
+        // modified Bresenham digital differential analyzer algorithm
+        var x0 = segments[i][0][0];
+            y0 = segments[i][0][1];
+            x1 = segments[i][1][0];
+            y1 = segments[i][1][1];
+        // verify x0,y0 is far left
+        if(x0 > x1) {
+            var firstX = x0;
+            var firstY = y0;
+            x0 = x1;
+            y0 = y1;
+            x1 = firstX;
+            y1 = firstY;
+        }
+        x0 = Math.floor(x0);
+        y0 = Math.floor(y0);
+        x1 = Math.floor(x1);
+        y1 = Math.floor(y1);
         var dx = Math.abs(x1-x0);
         var dy = Math.abs(y1-y0);
         var sx = (x0 < x1) ? 1 : -1;
         var sy = (y0 < y1) ? 1 : -1;
-        var err = dx-dy;
+        var err = dx - dy;
 
-        while(true){
+        while(true) {
             tileHash[x0+'/'+y0+'/'+max_zoom] = true;
-
-            if ((x0==x1) && (y0==y1)) break;
+            if(x0 > x1) throw new Error('Unable to find end of segment');
+            if (x0==x1 && y0==y1) break;
             var e2 = 2*err;
-            if (e2 >-dy){ err -= dy; x0  += sx; }
-            if (e2 < dx){ err += dx; y0  += sy; }
+            if (e2 >-dy){ err -= dy; Math.round(x0 += sx); }
+            if (e2 < dx){ err += dx; Math.round(y0 += sy); }
         }
     }
-    var tiles = Object.keys(tileHash)
-    //console.log(tiles)
-    var fc = []
-    tiles.forEach(function(tile){
-        tile = tile.split('/').map(function(t){return parseInt(t)})
-        fc.push(tilebelt.tileToGeoJSON(tile))
-    })
-    console.log(JSON.stringify(fc))
     return Object.keys(tileHash);
 }
+
+function pointToTileFraction (lon, lat, z) {
+    var tile = tilebelt.pointToTile(lon, lat, z);
+    var bbox = tilebelt.tileToBBOX(tile);
+    var tileNW = [bbox[0], bbox[3]];
+    var tileSE = [bbox[2], bbox[1]];
+
+    var xTileOffset = tileSE[0] - tileNW[0];
+    var xPointOffset = lon - tileNW[0];
+    var xPercentOffset = xPointOffset / xTileOffset;
+
+    var yTileOffset = tileSE[1] - tileNW[1];
+    var yPointOffset = lat - tileNW[1];
+    var yPercentOffset = yPointOffset / yTileOffset;
+
+    return [tile[0]+xPercentOffset, tile[1]+yPercentOffset];
+}
+
