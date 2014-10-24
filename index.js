@@ -21,8 +21,8 @@ module.exports = function(geom, limits) {
 function polyRingCover(ring, max_zoom) {
     // construct segments
     var segments = [];
-    for(var i = 0; i < ring.length; i++) { 
-        for(var k = 0; k < ring[i].length - 1; k++) { 
+    for(var i = 0; i < ring.length; i++) {
+        for(var k = 0; k < ring[i].length - 1; k++) {
             segments.push([[ring[i][k][0], ring[i][k][1]], [ring[i][k+1][0], ring[i][k+1][1]]]);
         }
     }
@@ -71,6 +71,13 @@ function polyRingCover(ring, max_zoom) {
         }
         y++;
     }
+    // add any missing tiles with a segments pass
+    for(var i = 0; i < ring.length; i++) { 
+        for(var k = 0; k < ring[i].length - 1; k++) {
+            segments.push([[ring[i][k][0], ring[i][k][1]], [ring[i][k+1][0], ring[i][k+1][1]]]);
+        }
+    }
+    
     return Object.keys(tileHash);
 }
 
